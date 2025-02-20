@@ -1,0 +1,19 @@
+{
+  "name": "piyush_dev",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node src/app.js"
+  },
+  "author": "Piyush Mani",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.21.2",
+    "mongoose": "^8.10.0",
+    "nodemon": "^3.1.9",
+    "validator": "^13.12.0"
+  }
+}
