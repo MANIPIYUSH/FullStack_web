@@ -40,18 +40,18 @@ app.post("/login", async (req, res) => {
     if (!user) {
       throw new Error("Invalid Credentials");
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.validatePassword(password);
     if (isPasswordValid) {
-      const token = await jwt.sign({ _id: user._id }, "Piyush@123");
-      console.log(token);
+      const token = await user.getJWT();
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      });
 
-      res.cookie("token", token);
       res.send("Login Successfully");
     } else {
       throw new Error("Invalid Credentials");
     }
   } catch (err) {
-    z;
     res.status(400).send("ERROR : " + err.message);
   }
 });
@@ -63,6 +63,17 @@ app.get("/profile", userAuth, async (req, res) => {
   } catch (err) {
     res.status(400).send("ERROR : " + err.message);
   }
+});
+
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  console.log("sending a connection request");
+  res.send("send connection request sent!!");
+
+  // try{
+
+  // }catch(err){
+  //     res.status(400).send("ERROR : " + err.message);
+  // }
 });
 
 app.get("/user", async (req, res) => {
