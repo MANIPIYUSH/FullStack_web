@@ -1,154 +1,31 @@
 const express = require("express");
 const connectDB = require("./config/database");
-const app = express();
-const User = require("./models/user");
-const { validateSignUpData } = require("./utils/validation");
-const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
-const { userAuth } = require("./middlewares/auth");
+
+const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-app.post("/signup", async (req, res) => {
-  try {
-    //validation of data
-    validateSignUpData(req);
+// Route Imports
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
 
-    const { firstName, lastName, emailId, password } = req.body;
-    //encrypt the password
-    const passwordHash = await bcrypt.hash(password, 10);
-    console.log(passwordHash);
+// Route Handlers
+app.use("/", authRouter);
+app.use("/profile", profileRouter);
+app.use("/request", requestRouter);
 
-    const user = new User({
-      firstName,
-      lastName,
-      emailId,
-      password: passwordHash,
-    });
-    await user.save();
-    res.send("User Added successfully");
-  } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
-  }
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    const { emailId, password } = req.body;
-    const user = await User.findOne({ emailId: emailId });
-    if (!user) {
-      throw new Error("Invalid Credentials");
-    }
-    const isPasswordValid = await user.validatePassword(password);
-    if (isPasswordValid) {
-      const token = await user.getJWT();
-      res.cookie("token", token, {
-        expires: new Date(Date.now() + 8 * 3600000),
-      });
-
-      res.send("Login Successfully");
-    } else {
-      throw new Error("Invalid Credentials");
-    }
-  } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
-  }
-});
-
-app.get("/profile", userAuth, async (req, res) => {
-  try {
-    const user = req.user;
-    res.send(user);
-  } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
-  }
-});
-
-app.post("/sendConnectionRequest", userAuth, async (req, res) => {
-  console.log("sending a connection request");
-  res.send("send connection request sent!!");
-
-  // try{
-
-  // }catch(err){
-  //     res.status(400).send("ERROR : " + err.message);
-  // }
-});
-
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
-  try {
-    const users = await User.find({ emailId: userEmail });
-    if (users.length === 0) {
-      res.status(404).send("User Not Found");
-    } else {
-      res.send(users);
-    }
-  } catch (err) {
-    res.status(400).send("sometging went wrong");
-  }
-});
-
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.send(users);
-  } catch (err) {
-    res.status(400).send("Something went wrong");
-  }
-});
-
-app.delete("/delete", async (req, res) => {
-  const userId = req.body.userId;
-  try {
-    const user = await User.findByIdAndDelete(userId);
-    res.send("User Deleted Successfully");
-  } catch (err) {
-    res.status(400).send("something Went Wrong ");
-  }
-});
-
-app.patch("/user/:userId", async (req, res) => {
-  const userId = req?.params?.userId;
-  const data = req.body;
-
-  try {
-    const ALLOWED_UPDATES = [
-      "userId",
-      "photoUrl",
-      "about",
-      "gender",
-      "age",
-      "skills",
-    ];
-
-    const isUpdateAllowed = Object.keys(data).every((k) =>
-      ALLOWED_UPDATES.includes(k)
-    );
-
-    if (!isUpdateAllowed) {
-      throw new Error("Update Not Allowed");
-    }
-
-    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
-      returnDocument: "after",
-      runValidators: true,
-    });
-    console.log(user);
-    res.send("User updated successfully");
-  } catch (err) {
-    res.status(400).send("UPDATE FAILED: " + err.message);
-  }
-});
-
+// Database Connection & Server Start
 connectDB()
   .then(() => {
-    console.log("Database connection Established...");
+    console.log("✅ Database connection established...");
     app.listen(7777, () => {
-      console.log("Server is successfully Listening on port 7777.....");
+      console.log("🚀 Server running on port 7777...");
     });
   })
   .catch((err) => {
-    console.error("Database cannot be connected!!");
+    console.error("❌ Database connection failed:", err);
   });
